@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="Plexion" content="width=device-width, initial-scale=1.0">
+<title>Plexion</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: #2a2a3a;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --text: #e8e8f0;
+    --text-dim: #6b6b8a;
+    --radius: 10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .logo span { color: var(--accent); }
+
+  /* ── GLOBAL CONTROLS ── */
+  .global-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn:hover { filter: brightness(1.15); }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-danger  { background: var(--accent2); color: #fff; }
+  .btn-ghost   { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-sm      { padding: 5px 11px; font-size: 0.78rem; }
+
+  .sync-status {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    padding: 5px 10px;
+    background: var(--surface2);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .sync-status.synced  { color: #4ade80; border-color: #4ade8044; }
+  .sync-status.syncing { color: #fbbf24; border-color: #fbbf2444; }
+
+  /* ── MAIN GRID ── */
+  #grid {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  #grid-inner {
+    display: grid;
+    gap: 2px;
+  }
+
+  /* ── VIDEO CARD ── */
+  .video-card {
+    background: #000;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .url-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .url-input:focus { border-color: var(--accent); }
+  .url-input::placeholder { color: var(--text-dim); }
+
+  .card-number {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    background: var(--border);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* player wrapper */
+  .player-wrap {
+    flex: 1;
+    position: relative;
+    background: #000;
+    min-height: 120px;
+  }
+  .player-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+  .player-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+  .player-placeholder svg { opacity: 0.25; }
+
+  /* per-card controls */
+  .card-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .card-footer .seek-bar {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .card-footer .seek-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  .card-time {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    transition: color 0.15s;
+  }
+  .del-btn:hover { color: var(--accent2); }
+
+  /* ── ADD VIDEO BUTTON ── */
+  .add-card {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    gap: 8px;
+    background: transparent;
+  }
+  .add-card:hover { border-color: var(--accent); color: var(--accent); background: #6c63ff11; }
+
+  /* ── FULLSCREEN ── */
+  #app:fullscreen,
+  #app:-webkit-full-screen {
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+  }
+  #app:fullscreen #grid,
+  #app:-webkit-full-screen #grid {
+    flex: 1;
+    min-height: 0;
+  }
+  #app:fullscreen header,
+  #app:-webkit-full-screen header,
+  #app:fullscreen .card-header,
+  #app:-webkit-full-screen .card-header,
+  #app:fullscreen .card-footer,
+  #app:-webkit-full-screen .card-footer,
+  #app:fullscreen .add-card,
+  #app:-webkit-full-screen .add-card {
+    display: none !important;
+  }
+  #app:fullscreen .video-card,
+  #app:-webkit-full-screen .video-card {
+    border-radius: 0;
+    border: none;
+  }
+  #app:fullscreen .player-wrap,
+  #app:-webkit-full-screen .player-wrap {
+    min-height: 0;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    border: 1px solid var(--border);
+    transition: transform 0.3s;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* volume slider */
+  .vol-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 60px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    cursor: pointer;
+  }
+
+  .vol-global-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .vol-global-wrap .vol-slider { width: 80px; }
+  #masterVolLabel {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    width: 32px;
+    font-variant-numeric: tabular-nums;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>
+</head>
+<body tabindex="-1">
+<div id="app">
+
+<header>
+  <div class="logo">Plex<span>ion</span></div>
+
+  <div class="global-controls">
+    <span class="sync-status" id="syncStatus">● idle</span>
+    <button type="button" class="btn btn-primary btn-sm" id="toggleBtn" onclick="globalTogglePlayPause()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6zm8-14v14h4V5z"/></svg>
+      <span id="toggleLabel">Pause</span>
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="globalSeekTo(0)">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      Début
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="globalResync()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+      Resync
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="toggleFullscreen()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+      Plein écran
+    </button>
+    <div class="vol-global-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--text-dim)"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+      <label for="masterVolSlider" class="sr-only">Volume global</label>
+      <input type="range" id="masterVolSlider" class="vol-slider" min="0" max="100" value="100"
+             title="Volume global" oninput="setMasterVolume(+this.value)">
+      <span id="masterVolLabel">100%</span>
+    </div>
+  </div>
+</header>
+
+<div id="grid"><div id="grid-inner"></div></div>
+<div id="toast"></div>
+
+</div><!-- #app -->
+
+<script>
+// ── YouTube IFrame API ──────────────────────────────────────────
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+
+// ── Vimeo SDK ───────────────────────────────────────────────────
+var vimeoTag = document.createElement('script');
+vimeoTag.src = "https://player.vimeo.com/api/player.js";
+document.head.appendChild(vimeoTag);
+
+// ── Twitch SDK ──────────────────────────────────────────────────
+var twitchTag = document.createElement('script');
+twitchTag.src = "https://player.twitch.tv/js/embed/v1.js";
+document.head.appendChild(twitchTag);
+
+
+// ── State ───────────────────────────────────────────────────────
+let slots = [];       // { id, player, videoId, ready, seekBar, timeEl, volSlider }
+let ytReady = false;
+let slotCounter = 0;
+
+window.onYouTubeIframeAPIReady = function() {
+  ytReady = true;
+  // init players that were queued before API loaded
+  slots.forEach(s => { if (s.pendingLoad) { s.pendingLoad(); delete s.pendingLoad; } });
+};
+
+// ── Layout ──────────────────────────────────────────────────────
+function updateGridLayout() {
+  const inner = document.getElementById('grid-inner');
+  const wrapper = document.getElementById('grid');
+  const count = slots.length;
+  if (!count) return;
+
+  // Determine columns
+  const cols = count <= 1 ? 1 : count <= 2 ? 2 : count <= 4 ? 2 : 3;
+  const rows = Math.ceil(count / cols);
+
+  // Available space
+  const gap = 2;
+  const aw = wrapper.clientWidth;
+  const ah = wrapper.clientHeight;
+
+  // Fit cells with 16:9 ratio inside available space
+  const cellW_byW = (aw - gap * (cols - 1)) / cols;
+  const cellH_byW = cellW_byW * 9 / 16;
+  const cellH_byH = (ah - gap * (rows - 1)) / rows;
+  const cellW_byH = cellH_byH * 16 / 9;
+
+  let cellW, cellH;
+  if (cellH_byW * rows + gap * (rows - 1) <= ah) {
+    cellW = cellW_byW; cellH = cellH_byW;
+  } else {
+    cellW = cellW_byH; cellH = cellH_byH;
+  }
+
+  cellW = Math.floor(cellW);
+  cellH = Math.floor(cellH);
+
+  inner.style.gridTemplateColumns = `repeat(${cols}, ${cellW}px)`;
+  inner.style.gridTemplateRows    = `repeat(${rows}, ${cellH}px)`;
+  inner.style.gap = `${gap}px`;
+
+  // Fix each card size
+  inner.querySelectorAll('.video-card').forEach(card => {
+    card.style.width  = cellW + 'px';
+    card.style.height = cellH + 'px';
+  });
+}
+
+window.addEventListener('resize', updateGridLayout);
+
+// ── Detect source type ───────────────────────────────────────────
+const DIRECT_EXTS = /\.(mp4|webm|ogg|ogv|mov|mkv|avi|flv|m4v)(\?.*)?$/i;
+
+function detectSource(url) {
+  url = url.trim();
+  if (DIRECT_EXTS.test(url))            return 'direct';
+  if (/vimeo\.com/.test(url))           return 'vimeo';
+  if (/twitch\.tv/.test(url))           return 'twitch';
+  if (/dailymotion\.com/.test(url))     return 'dailymotion';
+  if (/youtube\.com|youtu\.be/.test(url) || /^[a-zA-Z0-9_-]{11}$/.test(url)) return 'youtube';
+  return null;
+}
+
+function extractYouTubeId(input) {
+  input = input.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+  const patterns = [
+    /[?&]v=([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /embed\/([a-zA-Z0-9_-]{11})/,
+    /shorts\/([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = input.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function extractVimeoId(url) {
+  const m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  return m ? m[1] : null;
+}
+
+function extractTwitchId(url) {
+  const vid = url.match(/twitch\.tv\/videos\/(\d+)/);
+  if (vid) return { type: 'video', id: vid[1] };
+  const chan = url.match(/twitch\.tv\/([a-zA-Z0-9_]+)/);
+  if (chan) return { type: 'channel', id: chan[1] };
+  return null;
+}
+
+function extractDailymotionId(url) {
+  const m = url.match(/dailymotion\.com\/video\/([a-zA-Z0-9]+)/);
+  return m ? m[1] : null;
+}
+
+// ── Helper : crée un conteneur propre dans le slot ──────────────
+function getSlotWrap(slotId) {
+  const wrap = document.getElementById(`yt-player-${slotId}`);
+  wrap.innerHTML = '';
+  wrap.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+  return wrap;
+}
+
+// ── Vimeo wrapper ────────────────────────────────────────────────
+function makeVimeoPlayer(slot, videoId) {
+  if (typeof Vimeo === 'undefined') { toast('SDK Vimeo pas encore chargé, réessaie'); return null; }
+  const wrap = getSlotWrap(slot.id);
+
+  let _t = 0, _d = 0, _paused = true;
+
+  const p = new Vimeo.Player(wrap, { id: Number(videoId), responsive: true, autopause: false });
+
+  p.on('timeupdate',   e => { _t = e.seconds; });
+  p.on('durationchange', e => { _d = e.duration; });
+  p.on('play',         () => { _paused = false; });
+  p.on('pause',        () => { _paused = true; });
+  p.on('loaded',       () => { slot.ready = true; p.pause(); p.setVolume(masterVolume / 100); });
+
+  return {
+    playVideo()      { p.play(); },
+    pauseVideo()     { p.pause(); },
+    getCurrentTime() { return _t; },
+    getDuration()    { return _d; },
+    seekTo(sec)      { p.setCurrentTime(sec); },
+    setVolume(v)     { p.setVolume(Math.max(0, Math.min(100, v)) / 100); },
+    getPlayerState() { return _paused ? 2 : 1; },
+    destroy()        { p.destroy(); },
+  };
+}
+
+// ── Twitch wrapper ───────────────────────────────────────────────
+function makeTwitchPlayer(slot, info) {
+  if (typeof Twitch === 'undefined') { toast('SDK Twitch pas encore chargé, réessaie'); return null; }
+  const wrap = getSlotWrap(slot.id);
+  const containerId = `twitch-wrap-${slot.id}`;
+  const div = document.createElement('div');
+  div.id = containerId;
+  div.style.cssText = 'width:100%;height:100%;';
+  wrap.appendChild(div);
+
+  const opts = {
+    width: '100%', height: '100%',
+    parent: [window.location.hostname || 'localhost'],
+    autoplay: false,
+  };
+  if (info.type === 'video') opts.video = info.id;
+  else opts.channel = info.id;
+
+  const p = new Twitch.Player(containerId, opts);
+
+  p.addEventListener(Twitch.Player.READY, () => {
+    slot.ready = true;
+    p.pause();
+    p.setVolume(masterVolume / 100);
+  });
+
+  return {
+    playVideo()      { p.play(); },
+    pauseVideo()     { p.pause(); },
+    getCurrentTime() { return p.getCurrentTime() || 0; },
+    getDuration()    { return p.getDuration()    || 0; },
+    seekTo(sec)      { p.seek(sec); },
+    setVolume(v)     { p.setVolume(Math.max(0, Math.min(100, v)) / 100); },
+    getPlayerState() { return p.isPaused() ? 2 : 1; },
+    destroy()        { wrap.innerHTML = ''; },
+  };
+}
+
+// ── Dailymotion wrapper ──────────────────────────────────────────
+function makeDailymotionPlayer(slot, videoId) {
+  const wrap = getSlotWrap(slot.id);
+
+  // Dailymotion : iframe directe + API postMessage
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://www.dailymotion.com/embed/video/${videoId}?autoplay=0&controls=1&sharing-enable=0`;
+  iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
+  iframe.allow = 'autoplay; fullscreen';
+  wrap.appendChild(iframe);
+  slot.ready = true;
+
+  function dm(method, params) {
+    iframe.contentWindow && iframe.contentWindow.postMessage(
+      JSON.stringify({ method, params: params || [] }), '*'
+    );
+  }
+
+  let _t = 0, _d = 0, _paused = true;
+  window.addEventListener('message', e => {
+    try {
+      const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+      if (!data || !data.event) return;
+      if (data.event === 'timeupdate')     _t = data.time;
+      if (data.event === 'durationchange') _d = data.duration;
+      if (data.event === 'play')           _paused = false;
+      if (data.event === 'pause')          _paused = true;
+    } catch(e) {}
+  });
+
+  return {
+    playVideo()      { dm('play'); },
+    pauseVideo()     { dm('pause'); },
+    getCurrentTime() { return _t; },
+    getDuration()    { return _d; },
+    seekTo(sec)      { dm('seek', [sec]); },
+    setVolume(v)     { dm('volume', [Math.max(0, Math.min(100, v)) / 100]); },
+    getPlayerState() { return _paused ? 2 : 1; },
+    destroy()        { wrap.innerHTML = ''; },
+  };
+}
+
+// ── Native <video> wrapper (même API que YT.Player) ──────────────
+function makeNativePlayer(slot, url) {
+  const wrap = document.getElementById(`yt-player-${slot.id}`);
+  wrap.innerHTML = '';
+
+  const vid = document.createElement('video');
+  vid.src = url;
+  vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:#000;';
+  vid.preload = 'metadata';
+  wrap.style.position = 'relative';
+  wrap.appendChild(vid);
+
+  vid.addEventListener('loadedmetadata', () => {
+    slot.ready = true;
+    vid.pause();
+  });
+  vid.addEventListener('error', () => toast('Erreur : fichier inaccessible ou format non supporté'));
+
+  // YT-compatible interface
+  return {
+    _vid: vid,
+    playVideo()            { vid.play(); },
+    pauseVideo()           { vid.pause(); },
+    getCurrentTime()       { return vid.currentTime || 0; },
+    getDuration()          { return isFinite(vid.duration) ? vid.duration : 0; },
+    seekTo(sec)            { vid.currentTime = sec; },
+    setVolume(v)           { vid.volume = Math.max(0, Math.min(100, v)) / 100; },
+    getPlayerState()       { return vid.paused ? 2 : 1; }, // 1=playing, 2=paused
+    destroy()              { vid.pause(); vid.src = ''; wrap.innerHTML = ''; },
+  };
+}
+
+// ── Format seconds ───────────────────────────────────────────────
+function fmt(sec) {
+  if (!sec || isNaN(sec)) return '0:00';
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+// ── Create a slot ────────────────────────────────────────────────
+function addSlot(prefillUrl) {
+  const id = ++slotCounter;
+  const slot = { id, player: null, videoId: null, ready: false };
+  slots.push(slot);
+
+  const grid = document.getElementById('grid-inner');
+
+  // Remove existing add-card if any
+  const existing = grid.querySelector('.add-card');
+  if (existing) existing.remove();
+
+  // Card HTML
+  const card = document.createElement('div');
+  card.className = 'video-card';
+  card.dataset.slotId = id;
+
+  const iframeId = `yt-player-${id}`;
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-number">${id}</div>
+      <input class="url-input" placeholder="YouTube, Vimeo, Twitch, Dailymotion, .mp4…" data-slot="${id}">
+      <button class="btn btn-primary btn-sm" onclick="loadVideoForSlot(${id})">Charger</button>
+      <button class="del-btn" onclick="removeSlot(${id})" title="Supprimer">✕</button>
+    </div>
+    <div class="player-wrap">
+      <div id="placeholder-${id}" class="player-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        Aucune vidéo
+      </div>
+      <div id="${iframeId}"></div>
+    </div>
+    <div class="card-footer">
+      <button class="btn btn-ghost btn-sm" onclick="slotPlay(${id})">▶</button>
+      <button class="btn btn-ghost btn-sm" onclick="slotPause(${id})">⏸</button>
+      <input type="range" class="seek-bar" min="0" max="100" value="0"
+             data-slot-seek="${id}"
+             oninput="slotSeekDrag(${id}, this.value)"
+             onchange="slotSeekCommit(${id}, this.value)">
+      <span class="card-time" data-slot-time="${id}">0:00 / 0:00</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--text-dim)"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+      <input type="range" class="vol-slider" min="0" max="100" value="100"
+             data-slot-vol="${id}"
+             oninput="slotVolume(${id}, this.value)">
+    </div>
+  `;
+
+  // Add-more button
+  const addBtn = document.createElement('div');
+  addBtn.className = 'add-card';
+  addBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Ajouter une vidéo`;
+  addBtn.onclick = () => addSlot();
+
+  grid.appendChild(card);
+  grid.appendChild(addBtn);
+  updateGridLayout();
+
+  // Cache DOM refs
+  slot.seekBar   = card.querySelector(`[data-slot-seek="${id}"]`);
+  slot.timeEl    = card.querySelector(`[data-slot-time="${id}"]`);
+  slot.volSlider = card.querySelector(`[data-slot-vol="${id}"]`);
+  slot.urlInput  = card.querySelector(`[data-slot="${id}"]`);
+
+  // Prefill URL?
+  if (prefillUrl) {
+    slot.urlInput.value = prefillUrl;
+    loadVideoForSlot(id);
+  }
+
+  return slot;
+}
+
+// ── Load video into a slot ───────────────────────────────────────
+function loadVideoForSlot(id) {
+  const slot = slots.find(s => s.id === id);
+  if (!slot) return;
+  const raw = slot.urlInput.value.trim();
+  if (!raw) return;
+
+  // Destroy previous player if any
+  if (slot.player) { try { slot.player.destroy(); } catch(e) {} slot.player = null; slot.ready = false; }
+
+  const ph = document.getElementById(`placeholder-${id}`);
+  if (ph) ph.style.display = 'none';
+
+  const source = detectSource(raw);
+
+  if (source === 'direct') {
+    slot.player = makeNativePlayer(slot, raw);
+
+  } else if (source === 'vimeo') {
+    const vid = extractVimeoId(raw);
+    if (!vid) { toast('URL Vimeo invalide'); return; }
+    const vp = makeVimeoPlayer(slot, vid);
+    if (!vp) return;
+    slot.player = vp;
+
+  } else if (source === 'twitch') {
+    const info = extractTwitchId(raw);
+    if (!info) { toast('URL Twitch invalide'); return; }
+    const tp = makeTwitchPlayer(slot, info);
+    if (!tp) return;
+    slot.player = tp;
+
+  } else if (source === 'dailymotion') {
+    const vid = extractDailymotionId(raw);
+    if (!vid) { toast('URL Dailymotion invalide'); return; }
+    slot.player = makeDailymotionPlayer(slot, vid);
+
+  } else if (source === 'youtube') {
+    const ytId = extractYouTubeId(raw);
+    if (!ytId) { toast('URL YouTube invalide'); return; }
+    slot.videoId = ytId;
+    const doLoad = () => {
+      slot.player = new YT.Player(`yt-player-${id}`, {
+        videoId: ytId,
+        playerVars: { autoplay: 0, controls: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1 },
+        events: {
+          onReady: (e) => {
+            slot.ready = true;
+            e.target.pauseVideo();
+            e.target.setVolume(masterVolume);
+          },
+        }
+      });
+    };
+    if (ytReady) doLoad();
+    else slot.pendingLoad = doLoad;
+
+  } else {
+    toast('Plateforme non supportée');
+  }
+}
+
+// ── Remove slot ──────────────────────────────────────────────────
+function removeSlot(id) {
+  const idx = slots.findIndex(s => s.id === id);
+  if (idx === -1) return;
+  const slot = slots[idx];
+  if (slot.player) { try { slot.player.destroy(); } catch(e) {} }
+  slots.splice(idx, 1);
+
+  const card = document.querySelector(`.video-card[data-slot-id="${id}"]`);
+  if (card) card.remove();
+  // Re-add the add-card button
+  const inner = document.getElementById('grid-inner');
+  if (!inner.querySelector('.add-card')) {
+    const addBtn = document.createElement('div');
+    addBtn.className = 'add-card';
+    addBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Ajouter une vidéo`;
+    addBtn.onclick = () => addSlot();
+    inner.appendChild(addBtn);
+  }
+  updateGridLayout();
+}
+
+// ── Per-card controls ────────────────────────────────────────────
+function slotPlay(id) {
+  const s = slots.find(s => s.id === id);
+  if (s && s.player && s.ready) s.player.playVideo();
+}
+function slotPause(id) {
+  const s = slots.find(s => s.id === id);
+  if (s && s.player && s.ready) s.player.pauseVideo();
+}
+function slotVolume(id, val) {
+  const s = slots.find(s => s.id === id);
+  if (s && s.player && s.ready) s.player.setVolume(Number(val));
+}
+function slotSeekDrag(id, val) {
+  // live preview on time label only
+  const s = slots.find(s => s.id === id);
+  if (!s || !s.player || !s.ready) return;
+  const dur = s.player.getDuration() || 0;
+  const t = (val / 100) * dur;
+  if (s.timeEl) s.timeEl.textContent = `${fmt(t)} / ${fmt(dur)}`;
+}
+function slotSeekCommit(id, val) {
+  const s = slots.find(s => s.id === id);
+  if (!s || !s.player || !s.ready) return;
+  const dur = s.player.getDuration() || 0;
+  s.player.seekTo((val / 100) * dur, true);
+}
+
+// ── Global controls ──────────────────────────────────────────────
+function readySlots() { return slots.filter(s => s.ready && s.player); }
+
+let isPlaying = false;
+
+function globalPlayAll() {
+  const rs = readySlots();
+  if (!rs.length) { toast('Aucune vidéo chargée'); return; }
+  // Lance toutes les vidéos depuis leur position actuelle, sans toucher au seek
+  rs.forEach(s => s.player.playVideo());
+  isPlaying = true;
+  setSyncStatus('synced');
+  updateToggleBtn();
+  toast('▶ Lecture');
+}
+
+function globalPause() {
+  readySlots().forEach(s => s.player.pauseVideo());
+  isPlaying = false;
+  setSyncStatus('idle');
+  updateToggleBtn();
+}
+
+function globalTogglePlayPause() {
+  if (isPlaying) globalPause();
+  else globalPlayAll();
+}
+
+function updateToggleBtn() {
+  const lbl = document.getElementById('toggleLabel');
+  const btn = document.getElementById('toggleBtn');
+  if (!lbl || !btn) return;
+  lbl.textContent = isPlaying ? 'Pause' : 'Reprendre';
+  btn.querySelector('svg path').setAttribute('d',
+    isPlaying
+      ? 'M6 19h4V5H6zm8-14v14h4V5z'   // pause icon
+      : 'M8 5v14l11-7z'                // play icon
+  );
+}
+
+let masterVolume = 100;
+
+function setMasterVolume(vol) {
+  masterVolume = Math.max(0, Math.min(100, vol));
+  readySlots().forEach(s => {
+    s.player.setVolume(masterVolume);
+    if (s.volSlider) s.volSlider.value = masterVolume;
+  });
+  const slider = document.getElementById('masterVolSlider');
+  const label  = document.getElementById('masterVolLabel');
+  if (slider) slider.value = masterVolume;
+  if (label)  label.textContent = masterVolume + '%';
+  const icon = masterVolume === 0 ? '🔇' : masterVolume < 50 ? '🔉' : '🔊';
+  toast(`${icon} Volume : ${masterVolume}%`);
+}
+
+// Les iframes YouTube volent le focus clavier — on écoute aussi sur window
+// et on redirige le focus sur le body après chaque clic sur un player
+document.querySelectorAll && document.addEventListener('click', e => {
+  if (e.target.tagName === 'IFRAME') setTimeout(() => document.body.focus(), 50);
+});
+
+window.addEventListener('keydown', e => {
+  // Ignorer si un vrai champ texte est actif
+  const tag = document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    globalTogglePlayPause();
+  } else if (e.code === 'ArrowUp') {
+    e.preventDefault();
+    setMasterVolume(masterVolume + 5);
+  } else if (e.code === 'ArrowDown') {
+    e.preventDefault();
+    setMasterVolume(masterVolume - 5);
+  }
+});
+
+function globalSeekTo(sec) {
+  readySlots().forEach(s => s.player.seekTo(sec, true));
+}
+
+// Aligne toutes les vidéos sur la position de la première, à la demande
+function globalResync() {
+  const rs = readySlots();
+  if (rs.length < 2) { toast('Rien à resynchroniser'); return; }
+  const refTime = rs[0].player.getCurrentTime();
+  for (let i = 1; i < rs.length; i++) rs[i].player.seekTo(refTime, true);
+  toast('↺ Resynchronisé sur vidéo 1');
+  setSyncStatus('synced');
+}
+
+
+// ── UI tick (seek bars & timers) ─────────────────────────────────
+setInterval(() => {
+  slots.forEach(s => {
+    if (!s.player || !s.ready) return;
+    try {
+      const cur = s.player.getCurrentTime() || 0;
+      const dur = s.player.getDuration()    || 0;
+      if (s.seekBar && !s.seekBar.matches(':active')) {
+        s.seekBar.value = dur ? (cur / dur) * 100 : 0;
+      }
+      if (s.timeEl) s.timeEl.textContent = `${fmt(cur)} / ${fmt(dur)}`;
+    } catch(e) {}
+  });
+}, 500);
+
+// ── Fullscreen ───────────────────────────────────────────────────
+function toggleFullscreen() {
+  const app = document.getElementById('app');
+  if (!document.fullscreenElement) {
+    app.requestFullscreen().catch(() => toast('Plein écran refusé'));
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+document.addEventListener('fullscreenchange', () => {
+  // Wait one frame for CSS to apply, then recalculate grid
+  requestAnimationFrame(() => requestAnimationFrame(updateGridLayout));
+});
+
+// ── Status ───────────────────────────────────────────────────────
+function setSyncStatus(state) {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-status ' + state;
+  el.textContent = state === 'synced'  ? '● synchronisé'
+                 : state === 'syncing' ? '● synchro…'
+                 : '● idle';
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── Init with 2 default slots ────────────────────────────────────
+addSlot();
+addSlot();
+document.body.focus();
+</script>
+</body>
+</html>
